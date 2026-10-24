@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>status of ai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Script&family=Yesteryear&display=swap" rel="stylesheet">
+<style>
+  :root { --sky: #8fd3f4; --brown: #5c3317; --yellow: #ffd23f; --yellow-pale: #fff3c4; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "League Script", cursive;
+    color: var(--brown);
+    background-color: var(--sky);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='110' viewBox='0 0 140 110'%3E%3Cg fill='none' stroke='%235c3317' stroke-opacity='0.45' stroke-width='5' stroke-linejoin='round'%3E%3Cpath transform='translate(37 31) scale(.55) translate(-37 -31)' d='M14 34a8 8 0 0 1 8-8 11 11 0 0 1 20-3 8 8 0 0 1 12 7 6 6 0 0 1 0 12H20a6 6 0 0 1-6-8z'/%3E%3Cpath transform='translate(102 84) scale(.55) translate(-102 -84)' d='M84 86a7 7 0 0 1 7-7 10 10 0 0 1 18-3 7 7 0 0 1 11 6 5 5 0 0 1 0 10H90a5 5 0 0 1-6-6z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 140px 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px 24px;
+    text-align: center;
+  }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
+  h1 {
+    margin: 0 0 32px;
+    font-weight: 400;
+    font-size: clamp(3.2rem, 13vw, 8rem);
+    line-height: 1;
+    color: var(--brown);
+    -webkit-text-stroke: 3px var(--brown);
+    text-shadow: 3px 3px 0 var(--yellow);
+  }
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-family: "Yesteryear", cursive;
+    max-width: 900px;
+  }
+  .box {
+    display: flex;
+    align-items: center;
+    width: min(480px, 80vw);
+    background: var(--yellow-pale);
+    border: 4px solid var(--brown);
+    border-radius: 18px;
+    padding: 4px 18px 4px 6px;
+    box-shadow: 5px 5px 0 var(--yellow);
+  }
+  .box:focus-within { background: #fffbe3; }
+  input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    color: var(--brown);
+    background: transparent;
+    border: none;
+    padding: 4px 4px 4px 16px;
+    outline: none;
+  }
+  input::placeholder { color: rgba(92, 51, 23, 0.45); }
+  button {
+    font: inherit;
+    font-weight: 400;
+    color: var(--yellow);
+    background: var(--brown);
+    border: none;
+    border-radius: 18px;
+    padding: 8px 22px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 var(--yellow);
+  }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  #result {
+    margin-top: 36px;
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-family: "Yesteryear", cursive;
+    min-height: 3em;
+    max-width: 800px;
+    overflow-wrap: anywhere;
+  }
+  #result .big { font-size: 1.4em; display: block; margin-bottom: 8px; text-shadow: 2px 2px 0 var(--yellow); }
+  #result .year { display: block; margin-top: 14px; }
+  footer {
+    width: calc(100% + 32px);
+    margin: 40px -16px -24px;
+    padding: 16px;
+    border-top: 1px solid rgba(92, 51, 23, 0.2);
+    background: var(--sky);
+    font-family: system-ui, sans-serif;
+    font-style: normal;
+    font-size: 12px;
+    color: rgba(92, 51, 23, 0.7);
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>status of ai</h1>
+  <form id="ask">
+    <label for="task">can ai</label>
+    <div class="box">
+      <input id="task" name="task" autocomplete="off" maxlength="300" placeholder="fold my laundry" required>
+      <span>?</span>
+    </div>
+    <button type="submit">ask</button>
+  </form>
+  <div id="result" aria-live="polite"></div>
+</main>
+<footer>© 2026 made with 💛 by daedalus</footer>
+<script>
+  const form = document.getElementById("ask");
+  const input = document.getElementById("task");
+  const result = document.getElementById("result");
+  const button = form.querySelector("button");
+
+  const examples = [
+    "fold my laundry", "do my taxes", "drive me to work", "cook dinner", "write my essay",
+    "walk my dog", "fix my car", "cut my hair", "clean my room", "plan my wedding",
+    "be my doctor", "make a movie", "build a house", "teach my kid math", "paint my house",
+    "mow my lawn", "write a hit song", "do my job", "babysit my kids", "win a nobel prize",
+  ];
+  input.placeholder = examples[Math.floor(Math.random() * examples.length)];
+
+  function show(parts) {
+    result.replaceChildren(...parts.map(([cls, text]) => {
+      const el = document.createElement("span");
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    }));
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const task = input.value.trim();
+    if (!task) return;
+    button.disabled = true;
+    show([["", "thinking..."]]);
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      if (data.can) {
+        show([["big", "Yes."]]);
+      } else {
+        show([
+          ["big", "No."],
+          ["", `ai cannot do "${task}".`],
+          ["year", `ai can probably do this around ${data.year}.`],
+        ]);
+      }
+    } catch (err) {
+      show([["", err.message]]);
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
