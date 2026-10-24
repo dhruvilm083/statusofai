@@ -42,6 +42,8 @@
     will-change: transform;
   }
   .cloud.yellow { stroke: var(--yellow); }
+  #sky .cloud { transition: stroke 2s ease-in-out, opacity 2s ease-in-out; }
+  #sky.calm .cloud { opacity: 0.55; }
 
   main, footer { position: relative; z-index: 1; }
   main { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
@@ -219,26 +221,26 @@
   function buildSky() {
     sky.replaceChildren();
     clouds = [];
-    const cols = 2 * Math.ceil((innerWidth / TILE_W + 1) / 2); // even, so the alternating pattern survives wrapping
+    const cols = 2 * Math.ceil((innerWidth / TILE_W + 1) / 2);
     const rows = 2 * Math.ceil((innerHeight / TILE_H + 1) / 2);
     gridW = cols * TILE_W;
     gridH = rows * TILE_H;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        SPOTS.forEach(([sx, sy], spot) => {
+        SPOTS.forEach(([sx, sy]) => {
           const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
           svg.setAttribute("viewBox", "0 0 48 28");
           svg.setAttribute("width", CLOUD_W);
           svg.setAttribute("class", "cloud");
           svg.innerHTML = `<path d="${CLOUD}" stroke-width="${(3 * 48) / CLOUD_W}"/>`;
           sky.appendChild(svg);
-          clouds.push({ el: svg, x: c * TILE_W + sx, y: r * TILE_H + sy, alt: (r + c + spot) % 2 === 0 });
+          clouds.push({ el: svg, x: c * TILE_W + sx, y: r * TILE_H + sy });
         });
       }
     }
   }
 
-  // Animations switch in the footer: off freezes the grid and fades to an alternating brown/yellow pattern;
+  // Animations switch in the footer: off freezes the grid and fades to a softer, even brown/yellow mix;
   // on resumes the drift with a fresh random 10% yellow.
   const animToggle = document.getElementById("animToggle");
   let animating = !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -248,12 +250,8 @@
   } catch {}
   animToggle.checked = animating;
 
-  function alternateColors() {
-    clouds.forEach((c) => c.el.classList.toggle("yellow", c.alt));
-  }
-
-  function randomizeColors() {
-    const target = Math.round(clouds.length * YELLOW_SHARE);
+  function randomizeColors(share) {
+    const target = Math.round(clouds.length * share);
     const picks = new Set();
     while (picks.size < target) picks.add(Math.floor(Math.random() * clouds.length));
     clouds.forEach((c, i) => c.el.classList.toggle("yellow", picks.has(i)));
@@ -262,7 +260,7 @@
   animToggle.addEventListener("change", () => {
     animating = animToggle.checked;
     try { localStorage.setItem("animations", animating ? "on" : "off"); } catch {}
-    animating ? randomizeColors() : alternateColors();
+    applyMode();
   });
 
   let dist = 0, last = performance.now();
@@ -290,9 +288,15 @@
     }
   }, 1000);
 
+  // on: random 10% yellow; off: a calm, evenly split random mix (half yellow, half brown), softened
+  function applyMode() {
+    randomizeColors(animating ? YELLOW_SHARE : 0.5);
+    sky.classList.toggle("calm", !animating);
+  }
+
   function paintSky() {
     buildSky();
-    animating ? randomizeColors() : alternateColors();
+    applyMode();
   }
   paintSky();
   let resizeTimer;
