@@ -221,13 +221,15 @@
     requestAnimationFrame(frame);
   }
 
-  // every second, one random cloud slowly swaps color, keeping roughly the same yellow share
+  // every second, four random clouds slowly swap color, keeping roughly the same yellow share
+  const SWAPS_PER_TICK = 4;
   setInterval(() => {
-    if (!clouds.length) return;
-    const yellows = clouds.filter((c) => c.el.classList.contains("yellow"));
-    const makeYellow = yellows.length < clouds.length * YELLOW_SHARE;
-    const pool = makeYellow ? clouds.filter((c) => !c.el.classList.contains("yellow")) : yellows;
-    pool[Math.floor(Math.random() * pool.length)].el.classList.toggle("yellow");
+    for (let n = 0; n < SWAPS_PER_TICK && clouds.length; n++) {
+      const yellows = clouds.filter((c) => c.el.classList.contains("yellow"));
+      const makeYellow = yellows.length < clouds.length * YELLOW_SHARE;
+      const pool = makeYellow ? clouds.filter((c) => !c.el.classList.contains("yellow")) : yellows;
+      if (pool.length) pool[Math.floor(Math.random() * pool.length)].el.classList.toggle("yellow");
+    }
   }, 1000);
 
   buildSky();
