@@ -26,21 +26,20 @@
     overflow-x: hidden;
   }
 
-  /* drifting clouds */
+  /* drifting cloud grid */
   #sky { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
   .cloud {
     position: absolute;
+    top: 0;
+    left: 0;
     fill: none;
+    stroke-width: 5;
     stroke-linejoin: round;
-    animation: drift linear infinite;
+    stroke: rgba(92, 51, 23, 0.4);
+    transition: stroke 5s ease-in-out;
+    will-change: transform;
   }
-  .cloud.brown { stroke: rgba(92, 51, 23, 0.4); }
   .cloud.yellow { stroke: var(--yellow); }
-  @keyframes drift {
-    from { transform: translate(0, 0); }
-    to { transform: translate(130vh, 130vh); }
-  }
-  @media (prefers-reduced-motion: reduce) { .cloud { animation-play-state: paused; } }
 
   main, footer { position: relative; z-index: 1; }
   main { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
@@ -176,26 +175,68 @@
   document.fonts.ready.then(placeQuestionMark);
   placeQuestionMark();
 
-  // Drifting clouds: random spots, sizes and speeds; mostly brown, a few yellow.
-  // Each one starts above/left of the screen and drifts diagonally down-right.
+  // Drifting cloud grid: the same staggered pattern as before, all clouds moving together
+  // diagonally at one speed. A few are yellow, and now and then one slowly fades between colors.
   const sky = document.getElementById("sky");
   const CLOUD = "M4 18a7 7 0 0 1 7-7 10 10 0 0 1 18-3 7 7 0 0 1 11 6 5 5 0 0 1 0 10H9a5 5 0 0 1-5-6z";
-  const count = Math.max(18, Math.round((innerWidth * innerHeight) / 13000));
-  for (let i = 0; i < count; i++) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    const size = 26 + Math.random() * 22;
-    svg.setAttribute("viewBox", "0 0 48 28");
-    svg.setAttribute("width", size);
-    svg.setAttribute("class", "cloud " + (Math.random() < 0.18 ? "yellow" : "brown"));
-    svg.innerHTML = `<path d="${CLOUD}" stroke-width="${(3 * 48) / size}"/>`;
-    const duration = 45 + Math.random() * 45;
-    // start just above the page, anywhere from far left (so it drifts in from the side) to the right edge
-    const t = Math.random();
-    svg.style.left = `calc(${t * 100}vw - ${(1 - t) * 130}vh)`;
-    svg.style.top = "-60px";
-    svg.style.animationDuration = duration + "s";
-    svg.style.animationDelay = -(Math.random() * duration) + "s";
-    sky.appendChild(svg);
+  const TILE_W = 140, TILE_H = 110, CLOUD_W = 26, SPEED = 14; // px per second
+  const SPOTS = [[24, 18], [89, 71]]; // cloud positions inside each tile
+  const YELLOW_SHARE = 0.15;
+  let clouds = [], gridW = 0, gridH = 0;
+
+  function buildSky() {
+    sky.replaceChildren();
+    clouds = [];
+    const cols = Math.ceil(innerWidth / TILE_W) + 1;
+    const rows = Math.ceil(innerHeight / TILE_H) + 1;
+    gridW = cols * TILE_W;
+    gridH = rows * TILE_H;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        for (const [sx, sy] of SPOTS) {
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("viewBox", "0 0 48 28");
+          svg.setAttribute("width", CLOUD_W);
+          svg.setAttribute("class", "cloud" + (Math.random() < YELLOW_SHARE ? " yellow" : ""));
+          svg.innerHTML = `<path d="${CLOUD}" stroke-width="${(3 * 48) / CLOUD_W}"/>`;
+          sky.appendChild(svg);
+          clouds.push({ el: svg, x: c * TILE_W + sx, y: r * TILE_H + sy });
+        }
+      }
+    }
+  }
+
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const start = performance.now();
+  function frame(now) {
+    const d = reduceMotion ? 0 : ((now - start) / 1000) * SPEED;
+    const dx = d, dy = d * (TILE_H / TILE_W);
+    for (const cl of clouds) {
+      const x = ((cl.x + dx) % gridW) - TILE_W / 2;
+      const y = ((cl.y + dy) % gridH) - TILE_H / 2;
+      cl.el.style.transform = `translate(${x}px, ${y}px)`;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // every few seconds, one random cloud slowly swaps color, keeping roughly the same yellow share
+  setInterval(() => {
+    if (!clouds.length) return;
+    const yellows = clouds.filter((c) => c.el.classList.contains("yellow"));
+    const makeYellow = yellows.length < clouds.length * YELLOW_SHARE;
+    const pool = makeYellow ? clouds.filter((c) => !c.el.classList.contains("yellow")) : yellows;
+    pool[Math.floor(Math.random() * pool.length)].el.classList.toggle("yellow");
+  }, 2500);
+
+  buildSky();
+  let resizeTimer;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(buildSky, 200); });
+  requestAnimationFrame(frame);
+
+  // "be my doctor" -> "be your doctor" for the answer line
+  function toYour(text) {
+    const swaps = { my: "your", me: "you", mine: "yours", myself: "yourself", i: "you", "i'm": "you're", am: "are" };
+    return text.replace(/\b(i'm|myself|mine|my|me|i|am)\b/gi, (w) => swaps[w.toLowerCase()]);
   }
 
   function show(parts) {
@@ -226,7 +267,7 @@
       } else {
         show([
           ["big", "No."],
-          ["", `ai cannot ${task}.`],
+          ["", `ai cannot ${toYour(task)}.`],
           ["year", `ai can probably do this around ${data.year}.`],
         ]);
       }
