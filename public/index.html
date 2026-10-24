@@ -36,7 +36,7 @@
     stroke-width: 5;
     stroke-linejoin: round;
     stroke: rgba(92, 51, 23, 0.4);
-    transition: stroke 5s ease-in-out;
+    transition: stroke 2s ease-in-out;
     will-change: transform;
   }
   .cloud.yellow { stroke: var(--yellow); }
@@ -181,7 +181,7 @@
   const CLOUD = "M4 18a7 7 0 0 1 7-7 10 10 0 0 1 18-3 7 7 0 0 1 11 6 5 5 0 0 1 0 10H9a5 5 0 0 1-5-6z";
   const TILE_W = 140, TILE_H = 110, CLOUD_W = 26, SPEED = 14; // px per second
   const SPOTS = [[24, 18], [89, 71]]; // cloud positions inside each tile
-  const YELLOW_SHARE = 0.05;
+  const YELLOW_SHARE = 0.10;
   let clouds = [], gridW = 0, gridH = 0;
 
   function buildSky() {
