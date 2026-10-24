@@ -55,9 +55,9 @@ module.exports = async (req, res) => {
     if (/^yes/i.test(answer)) return res.json({ can: true });
 
     const yearText = await gemini(
-      `AI cannot currently do this: "${task}". In what year might AI be able to do it? Respond with only a single four-digit year and nothing else.`
+      `AI cannot currently do this: "${task}". In what year might AI be able to do it? Respond with only a single four-digit year and nothing else. If AI will probably never be able to do it, respond with only the word "never".`
     );
-    const year = (yearText.match(/\d{4}/) || ["someday"])[0];
+    const year = /never/i.test(yearText) ? "never" : (yearText.match(/\d{4}/) || ["someday"])[0];
     return res.json({ can: false, year });
   } catch (err) {
     console.error(err);

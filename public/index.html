@@ -268,7 +268,9 @@
         show([
           ["big", "No."],
           ["", `ai cannot ${toYour(task)}.`],
-          ["year", `ai can probably do this around ${data.year}.`],
+          ["year", data.year === "never"
+            ? "ai can probably never do this for you."
+            : `ai can probably do this around ${data.year}.`],
         ]);
       }
     } catch (err) {
